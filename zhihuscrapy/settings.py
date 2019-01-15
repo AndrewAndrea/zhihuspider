@@ -69,9 +69,10 @@ DEFAULT_REQUEST_HEADERS = {
 
 # Configure item pipelines
 # See https://doc.scrapy.org/en/latest/topics/item-pipeline.html
-#ITEM_PIPELINES = {
-#    'zhihuscrapy.pipelines.ZhihuscrapyPipeline': 300,
-#}
+ITEM_PIPELINES = {
+   # 'zhihuscrapy.pipelines.ZhihuscrapyPipeline': 300,
+   'zhihuscrapy.pipelines.ZhihuPipeline': 300,
+}
 
 # Enable and configure the AutoThrottle extension (disabled by default)
 # See https://doc.scrapy.org/en/latest/topics/autothrottle.html
@@ -93,3 +94,8 @@ DEFAULT_REQUEST_HEADERS = {
 #HTTPCACHE_DIR = 'httpcache'
 #HTTPCACHE_IGNORE_HTTP_CODES = []
 #HTTPCACHE_STORAGE = 'scrapy.extensions.httpcache.FilesystemCacheStorage'
+
+MYSQL_HOST = '123.207.61.85'
+MYSQL_DBNAME = 'zhihu'
+MYSQL_USER = 'root'
+MYSQL_PASSWD = 'Root!!wjzj1217'

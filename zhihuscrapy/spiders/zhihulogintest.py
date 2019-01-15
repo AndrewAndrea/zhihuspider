@@ -9,7 +9,7 @@ from urllib.parse import urlencode
 from scrapy.linkextractors import LinkExtractor
 from scrapy.spiders import CrawlSpider, Rule
 from zhihuscrapy.constants import Gender, People, HEADER
-# from requests_toolbelt import MultipartEncoder
+from zhihuscrapy.items import ZhihuPeopleItem, ZhihuRelationItem
 from hashlib import sha1
 from scrapy import Selector
 
@@ -124,13 +124,11 @@ class ZhihuComSpider(scrapy.Spider):
             """
                     登陆完成后从第一个用户开始爬数据
                     """
-            print("1")
-            print(response.status)
             return [scrapy.Request(
                 self.start_url,
                 meta={'cookiejar': response.meta['cookiejar']},
                 callback=self.parse_people,
-                # errback=self.parse_err,
+                errback=self.parse_err,
             )]
         else:
             print("登录失败")
@@ -170,11 +168,13 @@ class ZhihuComSpider(scrapy.Spider):
         #     '//span[@class="education-extra item"]/@title'
         # ).extract_first()
         # print(education)
+
         # 关注了，关注者
-        followee_count, follower_count = tuple(selector.xpath(
-            '//div[@class="NumberBoard-itemInner"]/strong[@class="NumberBoard-itemValue"]/text()'
-        ).extract())
-        followee_count, follower_count = int(followee_count), int(follower_count)
+        # followee_count, follower_count = tuple(selector.xpath(
+        #     '//div[@class="NumberBoard-itemInner"]/strong/text()'
+        # ).extract())
+
+        # followee_count, follower_count = str(followee_count), str(follower_count)
 
         image_url = selector.xpath(
             '//div[@class="UserAvatar ProfileHeader-avatar"]/img/@src'
@@ -184,94 +184,101 @@ class ZhihuComSpider(scrapy.Spider):
         ).extract()
         for url in follow_urls:
             complete_url = 'https://{}{}'.format(self.allowed_domains[0], url)
-            print(complete_url)
+            print(complete_url, '一个是关注者一个是被关注')
             yield scrapy.Request(complete_url,
                           meta={'cookiejar': response.meta['cookiejar']},
                           callback=self.parse_follow,
-                          # errback=self.parse_err
+                          errback=self.parse_err
                         )
-        print(nickname, zhihu_id, gender, followee_count,
-              follower_count, image_url)
-        # item = ZhihuPeopleItem(
-        #     nickname=nickname,
-        #     zhihu_id=zhihu_id,
-        #     location=location,
-        #     business=business,
-        #     gender=gender,
-        #     employment=employment,
-        #     position=position,
-        #     education=education,
-        #     followee_count=followee_count,
-        #     follower_count=follower_count,
-        #     image_url=image_url,
-        # )
-        # yield item
+        item = ZhihuPeopleItem(
+            nickname=nickname,
+            zhihu_id=zhihu_id,
+            # location=location,
+            # business=business,
+            gender=gender,
+            # employment=employment,
+            # position=position,
+            # education=education,
+            # followee_count=followee_count,
+            # follower_count=follower_count,
+            image_url=image_url,
+        )
+        yield item
 
 
     def parse_follow(self, response):
         """
         解析follow数据
         """
-        with open('peopel.html', 'w', encoding='utf8') as f:
-            f.write(response.text)
-        selector = Selector(response)
-        people_links = selector.xpath('//a[@class="zg-link"]/@href').extract()
-        people_info = selector.xpath(
-            '//span[@class="zm-profile-section-name"]/text()').extract_first()
-        people_param = selector.xpath(
-            '//div[@class="zh-general-list clearfix"]/@data-init').extract_first()
-
-        re_result = re.search(r'\d+', people_info) if people_info else None
-        people_count = int(re_result.group()) if re_result else len(people_links)
-        if not people_count:
-            return
-
-        people_param = json.loads(people_param)
-        post_url = 'https://{}/node/{}'.format(
-            self.allowed_domains[0], people_param['nodename'])
-        print(post_url)
-        # 去请求所有的用户数据
-        start = 20
-        while start < people_count:
-            payload = {
-                u'method': u'next',
-                u'_xsrf': self.xsrf,
-                u'params': people_param[u'params']
-            }
-            payload[u'params'][u'offset'] = start
-            payload[u'params'] = json.dumps(payload[u'params'])
-            HEADER.update({'Referer': response.url})
-            start += 20
-
-            # yield scrapy.Request(post_url,
-            #               method='POST',
-            #               meta={'cookiejar': response.meta['cookiejar']},
-            #               headers=HEADER,
-            #               body=urlencode(payload),
-            #               priority=100,
-            #               # callback=self.parse_post_follow
-            #             )
-
-        # 请求所有的人
+        url, user_type = os.path.split(response.url)
+        zhihu_id = os.path.split(url)[-1]
         zhihu_ids = []
-        for people_url in people_links:
-            zhihu_ids.append(os.path.split(people_url)[-1])
-            print(people_url, '关注的人')
-            # yield Request(people_url,
-            #               meta={'cookiejar': response.meta['cookiejar']},
-            #               callback=self.parse_people,
-            #               errback=self.parse_err)
+        # 获取关注的人
+        selector = Selector(response)
+        userlinks = selector.xpath('//script[@id="js-initialData"]/text()').extract_first()
+        userlinks = json.loads(userlinks)
+        userlinks = userlinks['initialState']['entities']['users'].keys()
+        if userlinks == 20:
+            yield scrapy.Request(complete_url,
+                                 meta={'cookiejar': response.meta['cookiejar']},
+                                 callback=self.parse_follow,
+                                 errback=self.parse_err
+                                 )
+        for follow in userlinks:
+            if zhihu_id == follow:
+                continue
+            else:
+                zhihu_ids.append(follow)
+                follow_url = 'https://{}{}'.format(self.allowed_domains[0], '/people/' + follow)
+                yield scrapy.Request(follow_url,
+                                     meta={'cookiejar': response.meta['cookiejar']},
+                                     callback=self.parse_people,
+                                     errback=self.parse_err)
 
         # 返回数据
-        url, user_type = os.path.split(response.url)
+
         user_type = People.Follower if user_type == u'followers' else People.Followee
-        # item = ZhihuRelationItem(
-        #     zhihu_id=os.path.split(url)[-1],
-        #     user_type=user_type,
-        #     user_list=zhihu_ids
-        # )
-        # yield item
+        item = ZhihuRelationItem(
+            zhihu_id=os.path.split(url)[-1],
+            user_type=user_type,
+            user_list=','.join(zhihu_ids),
+            count=len(zhihu_ids)
+        )
+        yield item
 
 
+    # def parse_post_follow(self, response):
+    #     """
+    #     获取动态请求拿到的人员
+    #     """
+    #     body = json.loads(response.body)
+    #     people_divs = body.get('msg', [])
+    #
+    #     # 请求所有的人
+    #     zhihu_ids = []
+    #     for div in people_divs:
+    #         selector = Selector(text=div)
+    #         link = selector.xpath('//a[@class="zg-link"]/@href').extract_first()
+    #         if not link:
+    #             continue
+    #
+    #         zhihu_ids.append(os.path.split(link)[-1])
+    #         # yield Request(link,
+    #         #               meta={'cookiejar': response.meta['cookiejar']},
+    #         #               callback=self.parse_people,
+    #         #               errback=self.parse_err)
+    #
+    #     url, user_type = os.path.split(response.request.headers['Referer'])
+    #     user_type = People.Follower if user_type == u'followers' else People.Followee
+    #     zhihu_id = os.path.split(url)[-1]
+    #     # yield ZhihuRelationItem(
+    #     #     zhihu_id=zhihu_id,
+    #     #     user_type=user_type,
+    #     #     user_list=zhihu_ids,
+    #     # )
+
+    def parse_err(self, response):
+        print(response.url)
+        # log.ERROR('crawl {} failed'.format(response.url))
 
 
