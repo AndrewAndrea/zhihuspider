@@ -24,18 +24,23 @@ class ZhihuPeopleItem(Item):
         employment 公司
         position 职位
         education 教育情况
+        major 专业
         image_url 头像图片url
+        followee_count 关注了
+        follower_count 关注者
     """
     nickname = Field()
     zhihu_id = Field()
-    # location = Field()
-    # business = Field()
+    location = Field()
+    business = Field()
     gender = Field()
-    # employment = Field()
-    # position = Field()
-    # education = Field()
-    # agree_count = Field()
-    # thanks_count = Field()
+    employment = Field()
+    position = Field()
+    education = Field()
+    school_name = Field()
+    major = Field()
+    followee_count = Field()
+    follower_count = Field()
     image_url = Field()
 
 
@@ -45,9 +50,9 @@ class ZhihuRelationItem(Item):
         zhihu_id 知乎id
         user_list 用户列表
         user_type 用户类型（1关注的人 2粉丝）
-        count 数量
+
     """
     zhihu_id = Field()
     user_list = Field()
     user_type = Field()
-    count = Field()
+

@@ -60,20 +60,33 @@ class ZhihuPipeline(object):
 
         try:
             # 插入数据
-            print(type(item['gender']))
-            self.cursor.execute(
-                """replace into zhihu_user(nickname,zhihu_id, gender, image_url) values(%s, %s, %s, %s);""",
+            sql = """replace into zhihu_user(nickname,zhihu_id, gender, image_url, location, business, employment, 
+                position, education, school_name, major, followee_count, follower_count) 
+                values('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', %s, %s);""" %\
                 (item['nickname'],
                  item['zhihu_id'],
                  item['gender'],
-                 item['image_url'],
-                 ))
+                 pymysql.escape_string(item['image_url']),
+                 item['location'],
+                 item['business'],
+                 item['employment'],
+                 item['position'],
+                 item['education'],
+                 item['school_name'],
+                 item['major'],
+                 item['followee_count'],
+                 item['follower_count']
+                 )
+            self.cursor.execute(sql
+                )
+
             # 提交sql语句
             self.connect.commit()
 
         except Exception as error:
             # 出现错误时打印错误日志
-           print(error, '存储用户信息出错')
+            print(error, '存储用户信息出错')
+            print(sql)
 
 
     def _process_relation(self, item):
@@ -82,17 +95,14 @@ class ZhihuPipeline(object):
         """
         try:
             # 插入数据
-            print(type(item['user_type']))
-            print(type(item['count']))
             self.cursor.execute(
-                """replace into focus(zhihu_id,user_list,user_type,count) values(%s, %s, %s, %s);""",
+                """replace into focus(zhihu_id,user_list,user_type) values(%s, %s, %s);""",
                 (item['zhihu_id'],
                  item['user_list'],
-                 item['user_type'],
-                 item['count']))
+                 item['user_type']
+                 ))
             # 提交sql语句
             self.connect.commit()
-
         except Exception as error:
             # 出现错误时打印错误日志
            print(error, '存储人际关系出错')
