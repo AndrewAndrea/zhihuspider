@@ -17,7 +17,7 @@ from scrapy import Selector, log
 class ZhihuComSpider(scrapy.Spider):
     name = 'zhihutest'
     allowed_domains = ['zhihu.com']
-    start_url = 'https://www.zhihu.com/people/msnz-12'
+    start_url = 'https://www.zhihu.com/people/holagala/'
 
     rules = (Rule(LinkExtractor(allow=r'Items/'), callback='parse_item', follow=True),)
 
@@ -34,6 +34,7 @@ class ZhihuComSpider(scrapy.Spider):
     source='com.zhihu.web'
     timestamp = str(int(time.time() * 1000))
     timestamp2 = str(time.time() * 1000)
+    followee_ids = []
 
     # 处理签名
     def get_signnature(self,grant_type,client_id,source,timestamp):
@@ -137,110 +138,117 @@ class ZhihuComSpider(scrapy.Spider):
         """
         解析用户主页
         """
-        if 'signin' in response.url:
-            log.logger.info('登录失效，重新登录')
-            self.start_url = response.meta.get('start_url')
-            self.start_requests()
-        selector = Selector(response)
-        # 昵称
-        # nickname = selector.xpath(
-        #     '//h1[@class="ProfileHeader-title"]/span[@class="ProfileHeader-name"]/text()'
-        # ).extract_first()
-        zhihu_id = os.path.split(response.url)[-1]
-        userlinks = selector.xpath('//script[@id="js-initialData"]/text()').extract_first()
-        userlinks = json.loads(userlinks)
-        userlinks = userlinks['initialState']['entities']['users'][zhihu_id]
-        nickname = userlinks['name']
-        try:
-            # 位置
-            location = userlinks['locations'][0]['name']
-        except (KeyError, IndexError) as e:
-            location = "未知"
-        try:
-            # 公司
-            employment = userlinks['employments'][0]['company']['name']
-            # # 职位
-            position = userlinks['employments'][0]['job']['name']
-        except (KeyError, IndexError) as e:
-            employment = '未知'
-            position = '未知'
-        try:
-            # 行业
-            business = userlinks['business'][0]['name']
-        except (KeyError, IndexError) as e:
-            business = "未知"
-        try:
-            # 学校名字
-            school_name = userlinks['educations'][0]['school']['name']
-            log.logger.info(userlinks['educations'])
-            # 专业
-            major = userlinks['educations'][0]['major']['name']
-            # 1高中及以下，2大专，3本科， 4硕士，5博士及以上
-            edu = userlinks['educations'][0]['diploma']
-            if edu == 1:
-                education = '高中及以下'
-            elif edu == 2:
-                education = '大专'
-            elif edu == 3:
-                education = '本科'
-            elif edu == 4:
-                education = '硕士'
-            elif edu == 5:
-                education = '博士及以上'
-            else:
-                education = '未知'
-        except (KeyError, IndexError) as e:
-            school_name = "未知"
-            major = "未知"
-            education = "未知"
-        try:
-            gender = userlinks['gender']
-            gender = '男' if gender == 1 else '女'
-        except IndexError as e:
-            gender = '未知'
-        image_url = selector.xpath(
-            '//div[@class="UserAvatar ProfileHeader-avatar"]/img/@src'
-        ).extract_first('')[0:-3]
-        follow_urls = selector.xpath(
-            '//div[@class="NumberBoard FollowshipCard-counts NumberBoard--divider"]/a/@href'
-        ).extract()
-        followee_count = userlinks['followingCount']
-        follower_count = userlinks['followerCount']
 
-        for url in follow_urls:
-            complete_url = 'https://{}{}'.format(self.allowed_domains[0], url)
-            print(complete_url, '一个是关注者一个是被关注', follower_count, followee_count)
-            if follower_count == 0:
-                if url.endswith('followers'):
-                    continue
-            if followee_count == 0:
+        selector = Selector(response)
+        zhihu_id = os.path.split(response.url)[-1]
+
+        try:
+            userlinks = selector.xpath('//script[@id="js-initialData"]/text()').extract_first()
+            userlinks = json.loads(userlinks)
+            userlinks = userlinks['initialState']['entities']['users'][zhihu_id]
+            nickname = userlinks['name']
+
+            try:
+                # 位置
+                location = userlinks['locations'][0]['name']
+            except (KeyError, IndexError) as e:
+                location = "未知"
+            try:
+                # 公司
+                employment = userlinks['employments'][0]['company']['name']
+                # # 职位
+                position = userlinks['employments'][0]['job']['name']
+            except (KeyError, IndexError) as e:
+                employment = '未知'
+                position = '未知'
+            try:
+                # 行业
+                business = userlinks['business'][0]['name']
+            except (KeyError, IndexError) as e:
+                business = "未知"
+            try:
+                # 学校名字
+                school_name = userlinks['educations'][0]['school']['name']
+                log.logger.info(userlinks['educations'])
+                # 专业
+                major = userlinks['educations'][0]['major']['name']
+                # 1高中及以下，2大专，3本科， 4硕士，5博士及以上
+                edu = userlinks['educations'][0]['diploma']
+                if edu == 1:
+                    education = '高中及以下'
+                elif edu == 2:
+                    education = '大专'
+                elif edu == 3:
+                    education = '本科'
+                elif edu == 4:
+                    education = '硕士'
+                elif edu == 5:
+                    education = '博士及以上'
+                else:
+                    education = '未知'
+            except (KeyError, IndexError) as e:
+                school_name = "未知"
+                major = "未知"
+                education = "未知"
+            try:
+                gender = userlinks['gender']
+                gender = '男' if gender == 1 else '女'
+            except IndexError as e:
+                gender = '未知'
+            image_url = selector.xpath(
+                '//div[@class="UserAvatar ProfileHeader-avatar"]/img/@src'
+            ).extract_first('')[0:-3]
+            follow_urls = selector.xpath(
+                '//div[@class="NumberBoard FollowshipCard-counts NumberBoard--divider"]/a/@href'
+            ).extract()
+            followee_count = userlinks['followingCount']
+            follower_count = userlinks['followerCount']
+
+            for url in follow_urls:
+                complete_url = 'https://{}{}'.format(self.allowed_domains[0], url)
+                print(complete_url, '一个是关注者一个是被关注', follower_count, followee_count)
+                if follower_count == 0:
+                    if url.endswith('followers'):
+                        continue
+                if followee_count == 0:
+                    if url.endswith('following'):
+                        continue
                 if url.endswith('following'):
-                    continue
-            if url.endswith('following'):
-                yield scrapy.Request(complete_url,
-                              meta={
-                                  'cookiejar': response.meta['cookiejar'],
-                              },
-                              headers=HEADER,
-                              callback=self.parse_follow,
-                              errback=self.parse_err
-                            )
-        item = ZhihuPeopleItem(
-            nickname=nickname,
-            zhihu_id=zhihu_id,
-            location=location,
-            business=business,
-            gender=gender,
-            employment=employment,
-            position=position,
-            education=education,
-            school_name=school_name,
-            major=major,
-            followee_count=followee_count,
-            follower_count=follower_count,
-            image_url=image_url + '.jpg',
-        )
-        yield item
+                    yield scrapy.Request(complete_url,
+                                  meta={
+                                      'cookiejar': response.meta['cookiejar'],
+                                  },
+                                  headers=HEADER,
+                                  callback=self.parse_follow,
+                                  errback=self.parse_err
+                                )
+            item = ZhihuPeopleItem(
+                nickname=nickname,
+                zhihu_id=zhihu_id,
+                location=location,
+                business=business,
+                gender=gender,
+                employment=employment,
+                position=position,
+                education=education,
+                school_name=school_name,
+                major=major,
+                followee_count=followee_count,
+                follower_count=follower_count,
+                image_url=image_url + 'jpg',
+            )
+            yield item
+        except Exception as e:
+            print(e)
+            print('页面被302到登录页', response.url)
+            # self.start_url = response.meta.get('start_url')
+            # self.start_requests()
+
+            yield scrapy.Request(response.meta.get('start_url'),
+                                 meta={'cookiejar': response.meta['cookiejar'], 'start_url': response.meta.get('start_url')},
+                                 callback=self.parse_people,
+                                 headers=HEADER,
+                                 errback=self.parse_err)
 
 
     def parse_follow(self, response):
@@ -248,16 +256,13 @@ class ZhihuComSpider(scrapy.Spider):
         解析follow数据
         """
         url, user_type = os.path.split(response.url)
+        type_name = user_type
         user_type = People.Follower if user_type == u'followers' else People.Followee
         zhihu_id = os.path.split(url)[-1]
-        print(zhihu_id, '当前用户')
         # 获取关注的人
         selector = Selector(response)
         # 获取js中的json数据
         userlinks = selector.xpath('//script[@id="js-initialData"]/text()').extract_first()
-
-        print(userlinks, 'json')
-
         # 解析
         userInfos = json.loads(userlinks)
         # 取所有的key
@@ -270,11 +275,13 @@ class ZhihuComSpider(scrapy.Spider):
         start = 20
         page = 1
         # 关注了
-        count = followee_count if user_type == 1 else follower_count
+        # count = followee_count if user_type == 1 else follower_count
+        # 由于在前面做了限制，所以只会爬取关注了谁。避免无用的循环
+        count = followee_count
         # 请求所有人的信息，每页有20条超过20条请求下一页
         while start < count:
             HEADER.update({'Referer': response.url})
-            follow_url = 'https://{}/people/{}?page={}'.format(self.allowed_domains[0], zhihu_id, page)
+            follow_url = 'https://{}/people/{}/{}?page={}'.format(self.allowed_domains[0], zhihu_id, type_name, page)
             start += 20
             page += 1
             yield scrapy.Request(follow_url,
@@ -307,10 +314,12 @@ class ZhihuComSpider(scrapy.Spider):
         获取动态请求拿到的人员
         """
 
-        url, user_type = os.path.split(response.url)
-        user_type = People.Follower if user_type == u'followers' else People.Followee
-        zhihu_id = os.path.split(url)[-1]
 
+        url, user_type = os.path.split(response.url)
+        type_name = user_type
+        user_type = People.Follower if 'followers' in user_type else People.Followee
+        zhihu_id = os.path.split(url)[-1]
+        print(zhihu_id, user_type, type_name)
         # 获取关注的人
         selector = Selector(response)
         userlinks = selector.xpath('//script[@id="js-initialData"]/text()').extract_first()

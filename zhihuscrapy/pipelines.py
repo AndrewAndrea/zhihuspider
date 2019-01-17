@@ -93,6 +93,7 @@ class ZhihuPipeline(object):
         存储人际拓扑关系
         """
         try:
+            # select * from focus where zhihu_id=
             # 插入数据
             self.cursor.execute(
                 """replace into focus(zhihu_id,user_list,user_type) values(%s, %s, %s);""",
