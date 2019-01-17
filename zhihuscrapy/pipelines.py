@@ -6,7 +6,6 @@
 # See: https://doc.scrapy.org/en/latest/topics/item-pipeline.html
 import os
 import pymysql
-from pymongo import MongoClient
 from zhihuscrapy.settings import MYSQL_HOST, MYSQL_DBNAME, MYSQL_USER, MYSQL_PASSWD
 from zhihuscrapy.items import ZhihuPeopleItem, ZhihuRelationItem
 # from zhihu.tools.async import download_pic

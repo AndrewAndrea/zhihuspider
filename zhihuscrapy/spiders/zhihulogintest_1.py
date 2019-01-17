@@ -11,13 +11,13 @@ from scrapy.spiders import CrawlSpider, Rule
 from zhihuscrapy.constants import Gender, People, HEADER
 from zhihuscrapy.items import ZhihuPeopleItem, ZhihuRelationItem
 from hashlib import sha1
-from scrapy import Selector
+from scrapy import Selector, log
 
 
 class ZhihuComSpider(scrapy.Spider):
     name = 'zhihutest'
     allowed_domains = ['zhihu.com']
-    start_url = 'https://www.zhihu.com/people/ji-ke-hai-tao-87'
+    start_url = 'https://www.zhihu.com/people/msnz-12'
 
     rules = (Rule(LinkExtractor(allow=r'Items/'), callback='parse_item', follow=True),)
 
@@ -66,8 +66,8 @@ class ZhihuComSpider(scrapy.Spider):
 
         else:
             print('不需要验证码')
-            post_url='https://www.zhihu.com/api/v3/oauth/sign_in'
-            post_data={
+            post_url = 'https://www.zhihu.com/api/v3/oauth/sign_in'
+            post_data ={
                 'client_id': self.client_id,
                 'grant_type': self.grant_type,
                 'timestamp': self.timestamp,
@@ -137,7 +137,10 @@ class ZhihuComSpider(scrapy.Spider):
         """
         解析用户主页
         """
-
+        if 'signin' in response.url:
+            log.logger.info('登录失效，重新登录')
+            self.start_url = response.meta.get('start_url')
+            self.start_requests()
         selector = Selector(response)
         # 昵称
         # nickname = selector.xpath(
@@ -169,6 +172,7 @@ class ZhihuComSpider(scrapy.Spider):
         try:
             # 学校名字
             school_name = userlinks['educations'][0]['school']['name']
+            log.logger.info(userlinks['educations'])
             # 专业
             major = userlinks['educations'][0]['major']['name']
             # 1高中及以下，2大专，3本科， 4硕士，5博士及以上
@@ -234,7 +238,7 @@ class ZhihuComSpider(scrapy.Spider):
             major=major,
             followee_count=followee_count,
             follower_count=follower_count,
-            image_url=image_url + 'jpg',
+            image_url=image_url + '.jpg',
         )
         yield item
 
@@ -285,7 +289,7 @@ class ZhihuComSpider(scrapy.Spider):
                 zhihu_ids.append(follow)
                 follow_url = 'https://{}{}'.format(self.allowed_domains[0], '/people/' + follow)
                 yield scrapy.Request(follow_url,
-                                     meta={'cookiejar': response.meta['cookiejar']},
+                                     meta={'cookiejar': response.meta['cookiejar'], 'start_url': follow_url},
                                      callback=self.parse_people,
                                      headers=HEADER,
                                      errback=self.parse_err)
