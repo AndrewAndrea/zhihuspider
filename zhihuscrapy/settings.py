@@ -94,8 +94,26 @@ ITEM_PIPELINES = {
 #HTTPCACHE_DIR = 'httpcache'
 #HTTPCACHE_IGNORE_HTTP_CODES = []
 #HTTPCACHE_STORAGE = 'scrapy.extensions.httpcache.FilesystemCacheStorage'
+# 广度优先
+DEPTH_PRIORITY = 1
+SCHEDULER_DISK_QUEUE = 'scrapy.squeues.PickleFifoDiskQueue'
+SCHEDULER_MEMORY_QUEUE = 'scrapy.squeues.FifoMemoryQueue'
 HTTPERROR_ALLOWED_CODES = [405]
 MYSQL_HOST = '123.207.61.85'
 MYSQL_DBNAME = 'zhihu'
 MYSQL_USER = 'root'
 MYSQL_PASSWD = 'Root!!wjzj1217'
+# scrapy-deltafetch实现爬虫增量去重
+SPIDER_MIDDLEWARES = {
+   'scrapy_deltafetch.DeltaFetch': 50,
+   'scrapy_magicfields.MagicFieldsMiddleware': 51,
+}
+DELTAFETCH_ENABLED = True
+MAGICFIELDS_ENABLED = True
+MAGIC_FIELDS = {
+    "timestamp": "$time",
+    "spider": "$spider:name",
+    "url": "scraped from $response:url",
+    "domain": "$response:url,r'https?://([\w\.]+)/']",
+}
+
