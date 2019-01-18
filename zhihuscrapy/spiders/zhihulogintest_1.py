@@ -17,7 +17,7 @@ from scrapy import Selector, log
 class ZhihuComSpider(scrapy.Spider):
     name = 'zhihutest'
     allowed_domains = ['zhihu.com']
-    start_url = 'https://zhihu.com/people/xi-bai-di'
+    start_url = 'https://www.zhihu.com/people/mei-li-xiu-xing-nei-ce-zu'
 
     rules = (Rule(LinkExtractor(allow=r'Items/'), callback='parse_item', follow=True),)
 
@@ -152,6 +152,7 @@ class ZhihuComSpider(scrapy.Spider):
                 # 位置
                 location = userlinks['locations'][0]['name']
             except (KeyError, IndexError) as e:
+                # log.WARNING('未找到位置'+str(e))
                 location = "未知"
             try:
                 # 公司
@@ -239,16 +240,23 @@ class ZhihuComSpider(scrapy.Spider):
             )
             yield item
         except Exception as e:
+            log.logger.error('页面被重定向到登录页' + str(e))
+            print(response.meta.get('start_url'), '123')
+            if response.meta.get('start_url') == 'None':
+                self.start_requests()
+            else:
+                with open('user_fail.txt', 'a', encoding='utf-8') as f:
+                    f.write('\n' + response.meta.get('start_url'))
+                self.start_url = response.meta.get('start_url')
+                self.start_requests()
 
-            log.logger.error('页面被重定向到登录页', str(e))
-            with open('user_fail.txt', 'a', encoding='utf-8') as f:
-                f.write('\n' + response.meta.get('start_url'))
-            yield scrapy.Request(response.meta.get('start_url'),
-                                 meta={'cookiejar': response.meta['cookiejar'], 'start_url': response.meta.get('start_url')},
-                                 callback=self.parse_people,
-                                 headers=HEADER,
-                                 errback=self.parse_err)
-
+            # yield scrapy.Request(response.meta.get('start_url'),
+            #                      meta={'cookiejar': response.meta['cookiejar'],
+            #                            'start_url': response.meta.get('start_url')
+            #                            },
+            #                      callback=self.parse_people,
+            #                      headers=HEADER,
+            #                      errback=self.parse_err)
 
     def parse_follow(self, response):
         """
@@ -268,7 +276,6 @@ class ZhihuComSpider(scrapy.Spider):
         userKeys = userInfos['initialState']['entities']['users'].keys()
         # 获取当前用户的信息
         userInfos = userInfos['initialState']['entities']['users'][zhihu_id]
-
         followee_count = userInfos['followingCount']
         follower_count = userInfos['followerCount']
         start = 20
@@ -286,7 +293,8 @@ class ZhihuComSpider(scrapy.Spider):
             yield scrapy.Request(follow_url,
                           meta={'cookiejar': response.meta['cookiejar']},
                           headers=HEADER,
-                          callback=self.parse_post_follow)
+                          callback=self.parse_post_follow,
+                          errback=self.parse_err)
         zhihu_ids = []
         for follow in userKeys:
             if zhihu_id == follow:
@@ -314,10 +322,8 @@ class ZhihuComSpider(scrapy.Spider):
         """
 
         url, user_type = os.path.split(response.url)
-        type_name = user_type
         user_type = People.Follower if 'followers' in user_type else People.Followee
         zhihu_id = os.path.split(url)[-1]
-        print(zhihu_id, user_type, type_name)
         # 获取关注的人
         selector = Selector(response)
         userlinks = selector.xpath('//script[@id="js-initialData"]/text()').extract_first()

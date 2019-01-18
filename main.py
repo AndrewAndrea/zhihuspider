@@ -1,4 +1,6 @@
 # -*- coding=utf8 -*-
 from scrapy import cmdline
+import datetime
 
-cmdline.execute("scrapy crawl zhihutest".split())
+today = datetime.datetime.now()
+cmdline.execute("scrapy crawl zhihutest -s LOG_FILE=log/spider.log".split())

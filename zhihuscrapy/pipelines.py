@@ -8,6 +8,7 @@ import os
 import pymysql
 from zhihuscrapy.settings import MYSQL_HOST, MYSQL_DBNAME, MYSQL_USER, MYSQL_PASSWD
 from zhihuscrapy.items import ZhihuPeopleItem, ZhihuRelationItem
+from scrapy import log
 # from zhihu.tools.async import download_pic
 
 
@@ -85,7 +86,7 @@ class ZhihuPipeline(object):
                 self.connect.commit()
         except Exception as error:
             # 出现错误时打印错误日志
-            print(error, '存储用户信息出错')
+            log.ERROR('保存用户时出错'+str(error))
 
 
 
@@ -100,10 +101,8 @@ class ZhihuPipeline(object):
             old_list = self.cursor.fetchall()
             if not old_list:
                 # 插入数据
-                print('没找到该数据直接插入', item['zhihu_id'])
                 self.cursor.execute("""replace into focus(zhihu_id,user_list,user_type) values(%s, %s, %s);""",
                                     (item['zhihu_id'], item['user_list'], item['user_type']))
-
             else:
                 # 数据库中的user_list
                 old_list = old_list[0][0].split(',')
@@ -122,7 +121,7 @@ class ZhihuPipeline(object):
             self.connect.commit()
         except Exception as error:
             # 出现错误时打印错误日志
-            print(error, '存储人际关系出错')
+            log.ERROR('存储人际关系出错' + str(error))
             self.connect.rollback()
 
 

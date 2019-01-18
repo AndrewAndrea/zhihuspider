@@ -8,6 +8,7 @@
 #     https://doc.scrapy.org/en/latest/topics/settings.html
 #     https://doc.scrapy.org/en/latest/topics/downloader-middleware.html
 #     https://doc.scrapy.org/en/latest/topics/spider-middleware.html
+import datetime
 
 BOT_NAME = 'zhihuscrapy'
 
@@ -108,5 +109,9 @@ MYSQL_PASSWD = 'Root!!wjzj1217'
 #     'scrapy_deltafetch.DeltaFetch': 100
 # }
 # DELTAFETCH_ENABLED = True
+# 配置日志
+LOG_LEVEL = 'DEBUG'
+
+
 
 
