@@ -17,7 +17,7 @@ from scrapy import Selector, log
 class ZhihuComSpider(scrapy.Spider):
     name = 'zhihutest'
     allowed_domains = ['zhihu.com']
-    start_url = 'https://www.zhihu.com/people/holagala/'
+    start_url = 'https://zhihu.com/people/xi-bai-di'
 
     rules = (Rule(LinkExtractor(allow=r'Items/'), callback='parse_item', follow=True),)
 
@@ -140,9 +140,9 @@ class ZhihuComSpider(scrapy.Spider):
         """
 
         selector = Selector(response)
-        zhihu_id = os.path.split(response.url)[-1]
 
         try:
+            zhihu_id = os.path.split(response.url)[-1]
             userlinks = selector.xpath('//script[@id="js-initialData"]/text()').extract_first()
             userlinks = json.loads(userlinks)
             userlinks = userlinks['initialState']['entities']['users'][zhihu_id]
@@ -169,7 +169,7 @@ class ZhihuComSpider(scrapy.Spider):
             try:
                 # 学校名字
                 school_name = userlinks['educations'][0]['school']['name']
-                log.logger.info(userlinks['educations'])
+                log.logger.info(school_name)
                 # 专业
                 major = userlinks['educations'][0]['major']['name']
                 # 1高中及以下，2大专，3本科， 4硕士，5博士及以上
@@ -239,11 +239,10 @@ class ZhihuComSpider(scrapy.Spider):
             )
             yield item
         except Exception as e:
-            print(e)
-            print('页面被302到登录页', response.url)
-            # self.start_url = response.meta.get('start_url')
-            # self.start_requests()
 
+            log.logger.error('页面被重定向到登录页', str(e))
+            with open('user_fail.txt', 'a', encoding='utf-8') as f:
+                f.write('\n' + response.meta.get('start_url'))
             yield scrapy.Request(response.meta.get('start_url'),
                                  meta={'cookiejar': response.meta['cookiejar'], 'start_url': response.meta.get('start_url')},
                                  callback=self.parse_people,
@@ -314,7 +313,6 @@ class ZhihuComSpider(scrapy.Spider):
         获取动态请求拿到的人员
         """
 
-
         url, user_type = os.path.split(response.url)
         type_name = user_type
         user_type = People.Follower if 'followers' in user_type else People.Followee
@@ -333,7 +331,7 @@ class ZhihuComSpider(scrapy.Spider):
                 zhihu_ids.append(follow)
                 follow_url = 'https://{}{}'.format(self.allowed_domains[0], '/people/' + follow)
                 yield scrapy.Request(follow_url,
-                                     meta={'cookiejar': response.meta['cookiejar']},
+                                     meta={'cookiejar': response.meta['cookiejar'], 'start_url': follow_url},
                                      callback=self.parse_people,
                                      headers=HEADER,
                                      errback=self.parse_err)
@@ -346,7 +344,7 @@ class ZhihuComSpider(scrapy.Spider):
         yield item
 
     def parse_err(self, response):
-        print(response.url)
-        # log.ERROR('crawl {} failed'.format(response.url))
+        # print(response.url)
+        log.ERROR('crawl {} failed'.format(response.url))
 
 

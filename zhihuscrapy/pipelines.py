@@ -58,34 +58,35 @@ class ZhihuPipeline(object):
         """
 
         try:
-            # 插入数据
-            sql = """replace into zhihu_user(nickname,zhihu_id, gender, image_url, location, business, employment, 
-                position, education, school_name, major, followee_count, follower_count) 
-                values('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', %s, %s);""" %\
-                (item['nickname'],
-                 item['zhihu_id'],
-                 item['gender'],
-                 pymysql.escape_string(item['image_url']),
-                 item['location'],
-                 item['business'],
-                 item['employment'],
-                 item['position'],
-                 item['education'],
-                 item['school_name'],
-                 item['major'],
-                 item['followee_count'],
-                 item['follower_count']
-                 )
-            self.cursor.execute(sql
-                )
-
-            # 提交sql语句
-            self.connect.commit()
-
+            select_sql = """select * from zhihu_user where (zhihu_id='%s');""" % \
+                         (item['zhihu_id'])
+            data = self.cursor.execute(select_sql)
+            if not data:
+                # 插入数据
+                sql = """replace into zhihu_user(nickname,zhihu_id, gender, image_url, location, business, employment, 
+                    position, education, school_name, major, followee_count, follower_count) 
+                    values('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', %s, %s);""" %\
+                    (item['nickname'],
+                     item['zhihu_id'],
+                     item['gender'],
+                     pymysql.escape_string(item['image_url']),
+                     item['location'],
+                     item['business'],
+                     item['employment'],
+                     item['position'],
+                     item['education'],
+                     item['school_name'],
+                     item['major'],
+                     item['followee_count'],
+                     item['follower_count']
+                     )
+                self.cursor.execute(sql)
+                # 提交sql语句
+                self.connect.commit()
         except Exception as error:
             # 出现错误时打印错误日志
             print(error, '存储用户信息出错')
-            print(sql)
+
 
 
     def _process_relation(self, item):
@@ -93,19 +94,37 @@ class ZhihuPipeline(object):
         存储人际拓扑关系
         """
         try:
-            # select * from focus where zhihu_id=
-            # 插入数据
-            self.cursor.execute(
-                """replace into focus(zhihu_id,user_list,user_type) values(%s, %s, %s);""",
-                (item['zhihu_id'],
-                 item['user_list'],
-                 item['user_type']
-                 ))
+            select_sql = """select user_list from focus where (zhihu_id='%s' and user_type=%d);""" % \
+                         (item['zhihu_id'], item['user_type'])
+            self.cursor.execute(select_sql)
+            old_list = self.cursor.fetchall()
+            if not old_list:
+                # 插入数据
+                print('没找到该数据直接插入', item['zhihu_id'])
+                self.cursor.execute("""replace into focus(zhihu_id,user_list,user_type) values(%s, %s, %s);""",
+                                    (item['zhihu_id'], item['user_list'], item['user_type']))
+
+            else:
+                # 数据库中的user_list
+                old_list = old_list[0][0].split(',')
+                # item中的user_list
+                new_list = item['user_list'].split(',')
+                # new_list = list(set(old_list) | set(new_list))
+                # 两个列表相加，通过set去重，再转为list
+                new_list = list(set(old_list + new_list))
+                user_list = ','.join(new_list)
+                # 更新
+                update_sql = """UPDATE focus SET user_list = '%s' WHERE (zhihu_id='%s' and user_type=%s);""" %\
+                 (user_list, item['zhihu_id'], item['user_type'])
+                # 更新
+                self.cursor.execute(update_sql)
             # 提交sql语句
             self.connect.commit()
         except Exception as error:
             # 出现错误时打印错误日志
-           print(error, '存储人际关系出错')
+            print(error, '存储人际关系出错')
+            self.connect.rollback()
+
 
     def process_item(self, item, spider):
         """
