@@ -86,7 +86,13 @@ class ZhihuPipeline(object):
                 self.connect.commit()
         except Exception as error:
             # 出现错误时打印错误日志
+            print(error)
             log.ERROR('保存用户时出错'+str(error))
+        except pymysql.err.InterfaceError as error:
+            print(error)
+            log.ERROR('数据连接已断掉，正在重连。。。')
+            self.__init__()
+            self.process_item(item, "zhihu")
 
 
 
@@ -121,8 +127,14 @@ class ZhihuPipeline(object):
             self.connect.commit()
         except Exception as error:
             # 出现错误时打印错误日志
-            log.ERROR('存储人际关系出错' + str(error))
+            print(error)
+            log.ERROR('存储人际关系出错')
             self.connect.rollback()
+        except pymysql.err.InterfaceError as error:
+            print(error)
+            log.ERROR('数据连接已断掉，正在重连。。。')
+            self.__init__()
+            self.process_item(item, "zhihu")
 
 
     def process_item(self, item, spider):

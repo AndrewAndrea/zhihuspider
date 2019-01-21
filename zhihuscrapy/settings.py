@@ -110,7 +110,10 @@ MYSQL_PASSWD = 'Root!!wjzj1217'
 # }
 # DELTAFETCH_ENABLED = True
 # 配置日志
-LOG_LEVEL = 'DEBUG'
+LOG_LEVEL = 'ERROR'
+# 配置scrapy-redis实现简单的分布式爬取
+# SCHEDULER = 'scrapy_redis.scheduler.Scheduler'
+
 
 
 

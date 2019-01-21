@@ -17,7 +17,7 @@ from scrapy import Selector, log
 class ZhihuComSpider(scrapy.Spider):
     name = 'zhihutest'
     allowed_domains = ['zhihu.com']
-    start_url = 'https://www.zhihu.com/people/mei-li-xiu-xing-nei-ce-zu'
+    start_url = 'https://www.zhihu.com/people/ding-lan-81-69'
 
     rules = (Rule(LinkExtractor(allow=r'Items/'), callback='parse_item', follow=True),)
 
