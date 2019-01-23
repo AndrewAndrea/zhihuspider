@@ -47,8 +47,6 @@ class ZhihuPipeline(object):
     # def open_spider(self, spider):
     #     self.client = MongoClient(self.mongo_uri)
     #     self.db = self.client[self.mongo_db]
-    #     if not os.path.exists(self.image_dir):
-    #         os.mkdir(self.image_dir)
     #
     # def close_spider(self, spider):
     #     self.client.close()
@@ -57,7 +55,7 @@ class ZhihuPipeline(object):
         """
         存储用户信息
         """
-
+        self.connect.ping(reconnect=True)
         try:
             select_sql = """select * from zhihu_user where (zhihu_id='%s');""" % \
                          (item['zhihu_id'])
@@ -81,18 +79,22 @@ class ZhihuPipeline(object):
                      item['followee_count'],
                      item['follower_count']
                      )
+
                 self.cursor.execute(sql)
                 # 提交sql语句
                 self.connect.commit()
-        except Exception as error:
+        except pymysql.err.ProgrammingError as error:
             # 出现错误时打印错误日志
-            print(error)
+            print(error, data, sql)
             log.ERROR('保存用户时出错'+str(error))
         except pymysql.err.InterfaceError as error:
-            print(error)
+            print(error, data, sql)
             log.ERROR('数据连接已断掉，正在重连。。。')
             self.__init__()
             self.process_item(item, "zhihu")
+        except Exception as e:
+            print(e)
+            print('插入用户数据出错')
 
 
 
@@ -100,6 +102,7 @@ class ZhihuPipeline(object):
         """
         存储人际拓扑关系
         """
+        self.connect.ping(reconnect=True)
         try:
             select_sql = """select user_list from focus where (zhihu_id='%s' and user_type=%d);""" % \
                          (item['zhihu_id'], item['user_type'])
@@ -125,7 +128,7 @@ class ZhihuPipeline(object):
                 self.cursor.execute(update_sql)
             # 提交sql语句
             self.connect.commit()
-        except Exception as error:
+        except pymysql.err.ProgrammingError as error:
             # 出现错误时打印错误日志
             print(error)
             log.ERROR('存储人际关系出错')
@@ -135,6 +138,10 @@ class ZhihuPipeline(object):
             log.ERROR('数据连接已断掉，正在重连。。。')
             self.__init__()
             self.process_item(item, "zhihu")
+        except Exception as e:
+            print(e)
+            print('插入数据出错')
+
 
 
     def process_item(self, item, spider):

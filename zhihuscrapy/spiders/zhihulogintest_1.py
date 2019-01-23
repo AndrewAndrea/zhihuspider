@@ -17,7 +17,7 @@ from scrapy import Selector, log
 class ZhihuComSpider(scrapy.Spider):
     name = 'zhihutest'
     allowed_domains = ['zhihu.com']
-    start_url = 'https://www.zhihu.com/people/ding-lan-81-69'
+    start_url = 'https://www.zhihu.com/people/yan-mu-21-39'
 
     rules = (Rule(LinkExtractor(allow=r'Items/'), callback='parse_item', follow=True),)
 
@@ -138,7 +138,9 @@ class ZhihuComSpider(scrapy.Spider):
         """
         解析用户主页
         """
-
+        if "need_login=true" in response.url:
+            with open('need_login.html', 'w', encoding="utf8") as f:
+                f.write(response.text)
         selector = Selector(response)
 
         try:
@@ -241,15 +243,11 @@ class ZhihuComSpider(scrapy.Spider):
             yield item
         except Exception as e:
             log.logger.error('页面被重定向到登录页' + str(e))
-            print(response.meta.get('start_url'), '123')
-            if response.meta.get('start_url') == 'None':
-                self.start_requests()
-            else:
+            try:
                 with open('user_fail.txt', 'a', encoding='utf-8') as f:
                     f.write('\n' + response.meta.get('start_url'))
-                self.start_url = response.meta.get('start_url')
-                self.start_requests()
-
+            except TypeError as e:
+                log.ERROR('直接跳到登录页面')
             # yield scrapy.Request(response.meta.get('start_url'),
             #                      meta={'cookiejar': response.meta['cookiejar'],
             #                            'start_url': response.meta.get('start_url')

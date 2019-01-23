@@ -110,9 +110,19 @@ MYSQL_PASSWD = 'Root!!wjzj1217'
 # }
 # DELTAFETCH_ENABLED = True
 # 配置日志
-LOG_LEVEL = 'ERROR'
+LOG_LEVEL = 'DEBUG'
 # 配置scrapy-redis实现简单的分布式爬取
-# SCHEDULER = 'scrapy_redis.scheduler.Scheduler'
+SCHEDULER = "scrapy_redis.scheduler.Scheduler"
+DUPEFILTER_CLASS = "scrapy_redis.dupefilter.RFPDupeFilter"
+#REDIS_URL = 'redis://sxw@192.168.75.50:6379'
+REDIS_HOST = '192.168.114.130'
+REDIS_PORT = 6379
+# 减少下载超时
+DOWNLOAD_TIMEOUT = 15
+# 禁止重试
+RETRY_ENABLED = False
+# 增加并发
+CONCURRENT_REQUESTS = 50
 
 
 
