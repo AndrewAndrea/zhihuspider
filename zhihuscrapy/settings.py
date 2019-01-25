@@ -100,10 +100,10 @@ DEPTH_PRIORITY = 1
 SCHEDULER_DISK_QUEUE = 'scrapy.squeues.PickleFifoDiskQueue'
 SCHEDULER_MEMORY_QUEUE = 'scrapy.squeues.FifoMemoryQueue'
 HTTPERROR_ALLOWED_CODES = [405]
-MYSQL_HOST = '123.207.61.85'
-MYSQL_DBNAME = 'zhihu'
-MYSQL_USER = 'root'
-MYSQL_PASSWD = 'Root!!wjzj1217'
+MYSQL_HOST = '数据库地址'
+MYSQL_DBNAME = '数据库名字'
+MYSQL_USER = '用户名'
+MYSQL_PASSWD = '密码'
 # scrapy-deltafetch实现爬虫增量去重
 # SPIDER_MIDDLEWARES = {
 #     'scrapy_deltafetch.DeltaFetch': 100
