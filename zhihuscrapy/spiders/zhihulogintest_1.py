@@ -247,7 +247,7 @@ class ZhihuComSpider(scrapy.Spider):
                 with open('user_fail.txt', 'a', encoding='utf-8') as f:
                     f.write('\n' + response.meta.get('start_url'))
             except TypeError as e:
-                log.ERROR('直接跳到登录页面')
+                log.logger.error('直接跳到登录页面' + str(e))
             # yield scrapy.Request(response.meta.get('start_url'),
             #                      meta={'cookiejar': response.meta['cookiejar'],
             #                            'start_url': response.meta.get('start_url')
@@ -349,6 +349,6 @@ class ZhihuComSpider(scrapy.Spider):
 
     def parse_err(self, response):
         # print(response.url)
-        log.ERROR('crawl {} failed'.format(response.url))
+        log.logger.error('crawl {} failed'.format(response.url))
 
 

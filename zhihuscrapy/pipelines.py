@@ -65,17 +65,17 @@ class ZhihuPipeline(object):
                 sql = """replace into zhihu_user(nickname,zhihu_id, gender, image_url, location, business, employment, 
                     position, education, school_name, major, followee_count, follower_count) 
                     values('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', %s, %s);""" %\
-                    (item['nickname'],
-                     item['zhihu_id'],
+                    (pymysql.escape_string(item['nickname']),
+                     pymysql.escape_string(item['zhihu_id']),
                      item['gender'],
                      pymysql.escape_string(item['image_url']),
                      pymysql.escape_string(item['location']),
-                     item['business'],
-                     item['employment'],
-                     item['position'],
-                     item['education'],
-                     item['school_name'],
-                     item['major'],
+                     pymysql.escape_string(item['business']),
+                     pymysql.escape_string(item['employment']),
+                     pymysql.escape_string(item['position']),
+                     pymysql.escape_string(item['education']),
+                     pymysql.escape_string(item['school_name']),
+                     pymysql.escape_string(item['major']),
                      item['followee_count'],
                      item['follower_count']
                      )
@@ -85,16 +85,13 @@ class ZhihuPipeline(object):
                 self.connect.commit()
         except pymysql.err.ProgrammingError as error:
             # 出现错误时打印错误日志
-            print(error, data, sql)
-            log.ERROR('保存用户时出错'+str(error))
+            log.logger.error('保存用户时出错'+str(error))
         except pymysql.err.InterfaceError as error:
-            print(error, data, sql)
-            log.ERROR('数据连接已断掉，正在重连。。。')
+            log.logger.error('数据连接已断掉，正在重连。。。')
             self.__init__()
             self.process_item(item, "zhihu")
         except Exception as e:
-            print(e)
-            print('插入用户数据出错')
+            log.logger.error('保存用户时出错' + str(e))
 
 
 
@@ -130,19 +127,14 @@ class ZhihuPipeline(object):
             self.connect.commit()
         except pymysql.err.ProgrammingError as error:
             # 出现错误时打印错误日志
-            print(error)
-            log.ERROR('存储人际关系出错')
+            log.logger.error('存储人际关系出错' + str(error))
             self.connect.rollback()
         except pymysql.err.InterfaceError as error:
-            print(error)
-            log.ERROR('数据连接已断掉，正在重连。。。')
+            log.logger.error('数据连接已断掉，正在重连。。。')
             self.__init__()
             self.process_item(item, "zhihu")
         except Exception as e:
-            print(e)
-            print('插入数据出错')
-
-
+            log.logger.error('插入数据出错' + str(e))
 
     def process_item(self, item, spider):
         """

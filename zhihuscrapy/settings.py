@@ -114,9 +114,12 @@ LOG_LEVEL = 'ERROR'
 # 配置scrapy-redis实现简单的分布式爬取
 SCHEDULER = "scrapy_redis.scheduler.Scheduler"
 DUPEFILTER_CLASS = "scrapy_redis.dupefilter.RFPDupeFilter"
-#REDIS_URL = 'redis://sxw@192.168.75.50:6379'
+#REDIS_URL = 'redis://root:wjzj1217@192.168.114.130:6379'
 REDIS_HOST = '192.168.114.130'
 REDIS_PORT = 6379
+REDIS_PARAMS = {
+    'password': 'wjzj1217',
+}
 # 减少下载超时
 DOWNLOAD_TIMEOUT = 15
 # 禁止重试
