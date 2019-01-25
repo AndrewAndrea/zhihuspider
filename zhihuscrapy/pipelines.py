@@ -69,7 +69,7 @@ class ZhihuPipeline(object):
                      item['zhihu_id'],
                      item['gender'],
                      pymysql.escape_string(item['image_url']),
-                     item['location'],
+                     pymysql.escape_string(item['location']),
                      item['business'],
                      item['employment'],
                      item['position'],

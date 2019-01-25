@@ -31,7 +31,7 @@ ROBOTSTXT_OBEY = False
 # Configure a delay for requests for the same website (default: 0)
 # See https://doc.scrapy.org/en/latest/topics/settings.html#download-delay
 # See also autothrottle settings and docs
-DOWNLOAD_DELAY = 3
+DOWNLOAD_DELAY = 1
 # The download delay setting will honor only one of:
 #CONCURRENT_REQUESTS_PER_DOMAIN = 16
 #CONCURRENT_REQUESTS_PER_IP = 16
@@ -110,7 +110,7 @@ MYSQL_PASSWD = 'Root!!wjzj1217'
 # }
 # DELTAFETCH_ENABLED = True
 # 配置日志
-LOG_LEVEL = 'DEBUG'
+LOG_LEVEL = 'ERROR'
 # 配置scrapy-redis实现简单的分布式爬取
 SCHEDULER = "scrapy_redis.scheduler.Scheduler"
 DUPEFILTER_CLASS = "scrapy_redis.dupefilter.RFPDupeFilter"
