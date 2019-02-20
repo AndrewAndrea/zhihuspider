@@ -74,8 +74,8 @@ class ZhihuComSpider(scrapy.Spider):
                 'timestamp': self.timestamp,
                 'source': self.source,
                 'signature': self.get_signnature(self.grant_type, self.client_id, self.source, self.timestamp),
-                'username': '+8615929799185',
-                'password': 'wjzj1217@',
+                'username': '+861333333333',
+                'password': '123456',
                 'captcha': '',
                 # 改为'cn'是倒立汉字验证码
                 'lang': 'en',
@@ -102,8 +102,8 @@ class ZhihuComSpider(scrapy.Spider):
             'timestamp': self.timestamp,
             'source': self.source,
             'signature': self.get_signnature(self.grant_type, self.client_id, self.source, self.timestamp),
-            'username': '+8615929799185',
-            'password': 'wjzj1217@',
+            'username': '+86133333333',
+            'password': '123456',
             'captcha': captcha,
             # 改为'cn'是倒立汉字验证码
             'lang': 'en',
@@ -242,19 +242,8 @@ class ZhihuComSpider(scrapy.Spider):
             )
             yield item
         except Exception as e:
-            log.logger.error('页面被重定向到登录页' + str(e))
-            try:
-                with open('user_fail.txt', 'a', encoding='utf-8') as f:
-                    f.write('\n' + response.meta.get('start_url'))
-            except TypeError as e:
-                log.logger.error('直接跳到登录页面' + str(e))
-            # yield scrapy.Request(response.meta.get('start_url'),
-            #                      meta={'cookiejar': response.meta['cookiejar'],
-            #                            'start_url': response.meta.get('start_url')
-            #                            },
-            #                      callback=self.parse_people,
-            #                      headers=HEADER,
-            #                      errback=self.parse_err)
+            log.logger.error('当前用户不存在' + str(e))
+            
 
     def parse_follow(self, response):
         """
